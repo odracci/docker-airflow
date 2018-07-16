@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ARG AIRFLOW_VERSION=1.10.0rc1
+ARG AIRFLOW_VERSION=kubernetes-git-sync-fix-1-10-stable
 ARG AIRFLOW_HOME=/usr/local/airflow
 
 # Define en_US.
@@ -59,7 +59,7 @@ RUN set -ex \
     && pip install pyOpenSSL \
     && pip install ndg-httpsclient \
     && pip install pyasn1 \
-    && pip install "git+https://github.com/apache/incubator-airflow.git@$AIRFLOW_VERSION#egg=apache-airflow[crypto,celery,postgres,hive,jdbc,mysql]" \
+    && pip install "git+https://github.com/odracci/incubator-airflow.git@$AIRFLOW_VERSION#egg=apache-airflow[crypto,celery,postgres,hive,jdbc,mysql]" \
     && pip install celery[redis]==4.1.1 \
     && apt-get purge --auto-remove -yqq $buildDeps \
     && apt-get autoremove -yqq --purge \
