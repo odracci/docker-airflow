@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ARG AIRFLOW_VERSION=kubernetes-git-sync-fix-1-10-stable
+ARG AIRFLOW_VERSION=kubernetes-git-sync-fix
 ARG AIRFLOW_HOME=/usr/local/airflow
 
 # Define en_US.
@@ -21,6 +21,9 @@ ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV LC_CTYPE en_US.UTF-8
 ENV LC_MESSAGES en_US.UTF-8
+
+ENV SLUGIFY_USES_TEXT_UNIDECODE=yes \
+    AIRFLOW_GPL_UNIDECODE=yes
 
 RUN set -ex \
     && buildDeps=' \
