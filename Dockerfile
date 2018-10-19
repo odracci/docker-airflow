@@ -39,6 +39,9 @@ RUN set -ex \
         git \
     ' \
     && apt-get update -yqq \
+    && apt-get install -yqq --no-install-recommends curl gnupg2 \
+    && curl -sL https://deb.nodesource.com/setup_8.x | bash - \
+    && apt-get update -yqq \
     && apt-get upgrade -yqq \
     && apt-get install -yqq --no-install-recommends \
         $buildDeps \
@@ -52,6 +55,7 @@ RUN set -ex \
         rsync \
         netcat \
         locales \
+        nodejs \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
@@ -74,6 +78,10 @@ RUN set -ex \
         /usr/share/man \
         /usr/share/doc \
         /usr/share/doc-base
+
+RUN cd /usr/local/lib/python3.6/site-packages \
+    && /usr/local/lib/python3.6/site-packages/airflow/www_rbac/compile_assets.sh \
+    && rm -r /usr/local/lib/python3.6/site-packages/airflow/www_rbac/node_modules
 
 COPY script/entrypoint.sh /entrypoint.sh
 COPY config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
