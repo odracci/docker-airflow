@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ENV AIRFLOW_VERSION=kubernetes-git-sync-fix-1-10-test-ae39df5-fix-idle-transaction
+ENV AIRFLOW_VERSION=kubernetes-git-sync-fix-1-10-test-23ff340
 ENV AIRFLOW_HOME=/usr/local/airflow
 
 # Define en_US.
