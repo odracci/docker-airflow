@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ENV AIRFLOW_VERSION=kubernetes-git-sync-fix-1-10-test-23ff340
+ENV AIRFLOW_VERSION=1.10.2
 ENV AIRFLOW_HOME=/usr/local/airflow
 
 # Define en_US.
@@ -32,8 +32,6 @@ RUN set -ex \
         libssl-dev \
         libffi-dev \
         build-essential \
-        libblas-dev \
-        liblapack-dev \
         libpq-dev \
         git \
     ' \
@@ -56,19 +54,44 @@ RUN set -ex \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow \
     && pip install -U pip setuptools wheel \
-    && pip install Cython \
     && pip install pytz \
     && pip install pyOpenSSL \
     && pip install ndg-httpsclient \
     && pip install pyasn1 \
-    && pip install "git+https://github.com/odracci/incubator-airflow.git@$AIRFLOW_VERSION#egg=apache-airflow[crypto,celery,postgres,hive,jdbc,mysql]" \
+    && pip install apache-airflow[crypto,celery,postgres,hive,jdbc,mysql,ssh]==$AIRFLOW_VERSION \
+    && pip install apache-airflow[s3,kubernetes,gcp_api]==$AIRFLOW_VERSION \
     && pip install celery[redis]==4.1.1 \
+    && pip install psycopg2-binary \
     && apt-get purge --auto-remove -yqq $buildDeps \
     && apt-get autoremove -yqq --purge \
     && apt-get clean \
     && rm -rf \
         /var/lib/apt/lists/* \
         /tmp/* \
+        /var/tmp/* \
+        /usr/share/man \
+        /usr/share/doc \
+        /usr/share/doc-base
+
+RUN set -ex \
+    && echo "deb http://ftp.us.debian.org/debian stretch main" > /etc/apt/sources.list \
+    && echo "deb http://security.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list \
+    && echo "deb http://ftp.us.debian.org/debian stretch-updates main" >> /etc/apt/sources.list \
+    && mkdir -p /usr/share/man/man1 \
+    && mkdir -p /usr/share/man/man7 \
+    && apt-get update -yqq \
+    && apt-get install -yqq --no-install-recommends \
+        procps \
+        htop \
+        inetutils-ping \
+        dnsutils \
+        net-tools \
+        postgresql-client-9.6 \
+        jq \
+    && apt-get autoremove -yqq --purge \
+    && apt-get clean \
+    && rm -rf \
+        /var/lib/apt/lists/* \
         /var/tmp/* \
         /usr/share/man \
         /usr/share/doc \
