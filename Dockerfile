@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ENV AIRFLOW_VERSION=1.10.2
+ENV AIRFLOW_VERSION=1.10.3
 ENV AIRFLOW_HOME=/usr/local/airflow
 
 # Define en_US.

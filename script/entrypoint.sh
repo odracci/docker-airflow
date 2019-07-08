@@ -2,44 +2,24 @@
 
 TRY_LOOP="20"
 
-: "${REDIS_HOST:="redis"}"
-: "${REDIS_PORT:="6379"}"
-: "${REDIS_PASSWORD:=""}"
-
-: "${POSTGRES_HOST:="postgres"}"
-: "${POSTGRES_PORT:="5432"}"
-: "${POSTGRES_USER:="airflow"}"
-: "${POSTGRES_PASSWORD:="airflow"}"
-: "${POSTGRES_DB:="airflow"}"
+: "${MYSQL_HOST:="mysql"}"
+: "${MYSQL_PORT:="3306"}"
+: "${MYSQL_USER:="airflow"}"
+: "${MYSQL_PASSWORD:="airflow"}"
+: "${MYSQL_DB:="airflow"}"
 
 # Defaults and back-compat
 : "${AIRFLOW__CORE__FERNET_KEY:=${FERNET_KEY:=$(python -c "from cryptography.fernet import Fernet; FERNET_KEY = Fernet.generate_key().decode(); print(FERNET_KEY)")}}"
-: "${AIRFLOW__CORE__EXECUTOR:=${EXECUTOR:-Sequential}Executor}"
+: "${SQL_ALCHEMY_CONN:=${SQL_ALCHEMY_CONN:-mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}}}"
+: "${AIRFLOW__CORE__SQL_ALCHEMY_CONN:=${SQL_ALCHEMY_CONN}}"
 
 export \
-  AIRFLOW__CELERY__BROKER_URL \
-  AIRFLOW__CELERY__CELERY_RESULT_BACKEND \
-  AIRFLOW__CORE__EXECUTOR \
   AIRFLOW__CORE__FERNET_KEY \
-  AIRFLOW__CORE__LOAD_EXAMPLES \
   AIRFLOW__CORE__SQL_ALCHEMY_CONN \
 
-
-# Load DAGs exemples (default: Yes)
-if [[ -z "$AIRFLOW__CORE__LOAD_EXAMPLES" && "${LOAD_EX:=n}" == n ]]
-then
-  AIRFLOW__CORE__LOAD_EXAMPLES=False
-fi
-
 # Install custom python package if requirements.txt is present
-if [ -e "/requirements.txt" ]; then
+if [[ -e "/requirements.txt" ]]; then
     $(which pip) install --user -r /requirements.txt
-fi
-
-if [ -n "$REDIS_PASSWORD" ]; then
-    REDIS_PREFIX=:${REDIS_PASSWORD}@
-else
-    REDIS_PREFIX=
 fi
 
 wait_for_port() {
@@ -47,7 +27,7 @@ wait_for_port() {
   local j=0
   while ! nc -z "$host" "$port" >/dev/null 2>&1 < /dev/null; do
     j=$((j+1))
-    if [ $j -ge $TRY_LOOP ]; then
+    if [[ $j -ge $TRY_LOOP ]]; then
       echo >&2 "$(date) - $host:$port still not reachable, giving up"
       exit 1
     fi
@@ -56,15 +36,12 @@ wait_for_port() {
   done
 }
 
-if [ "$AIRFLOW__CORE__EXECUTOR" != "SequentialExecutor" ]; then
-  AIRFLOW__CORE__SQL_ALCHEMY_CONN="postgresql+psycopg2://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB"
-  AIRFLOW__CELERY__CELERY_RESULT_BACKEND="db+postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB"
-  wait_for_port "Postgres" "$POSTGRES_HOST" "$POSTGRES_PORT"
+if [[ "${WAIT_FOR_DATABASE:-0}" = "1" ]]; then
+  wait_for_port "Mysql" "$MYSQL_HOST" "$MYSQL_PORT"
 fi
 
-if [ "$AIRFLOW__CORE__EXECUTOR" = "CeleryExecutor" ]; then
-  AIRFLOW__CELERY__BROKER_URL="redis://$REDIS_PREFIX$REDIS_HOST:$REDIS_PORT/1"
-  wait_for_port "Redis" "$REDIS_HOST" "$REDIS_PORT"
+if [[ "${CREATE_ADMIN_USER:-false}" = "true" ]]; then
+    (airflow create_user -u airflow -l airflow -f jon -e airflow@apache.org -r Admin -p airflow || true)
 fi
 
 case "$1" in
@@ -74,7 +51,6 @@ case "$1" in
     ;;
   worker|scheduler)
     # To give the webserver time to run initdb.
-    sleep 10
     exec airflow "$@"
     ;;
   flower)
