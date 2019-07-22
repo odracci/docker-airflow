@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ENV AIRFLOW_VERSION=1.10.2
+ENV AIRFLOW_VERSION=1.10.2-k8s-fix-long-dag-task-names
 ENV AIRFLOW_HOME=/usr/local/airflow
 
 # Define en_US.
@@ -58,8 +58,8 @@ RUN set -ex \
     && pip install pyOpenSSL \
     && pip install ndg-httpsclient \
     && pip install pyasn1 \
-    && pip install apache-airflow[crypto,celery,postgres,hive,jdbc,mysql,ssh]==$AIRFLOW_VERSION \
-    && pip install apache-airflow[s3,kubernetes,gcp_api]==$AIRFLOW_VERSION \
+    && pip install "git+https://github.com/odracci/incubator-airflow.git@$AIRFLOW_VERSION#egg=apache-airflow[crypto,celery,postgres,hive,jdbc,mysql,ssh]" \
+    && pip install "git+https://github.com/odracci/incubator-airflow.git@$AIRFLOW_VERSION#egg=apache-airflow[s3,kubernetes,gcp_api]" \
     && pip install celery[redis]==4.1.1 \
     && pip install psycopg2-binary \
     && apt-get purge --auto-remove -yqq $buildDeps \
